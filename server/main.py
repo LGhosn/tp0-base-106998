@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 from configparser import ConfigParser
+import sys
 from common.server import Server
 import logging
 import os
-
+import signal
 
 def initialize_config():
     """ Parse env variables or config file to find program config params
@@ -34,6 +35,13 @@ def initialize_config():
     return config_params
 
 
+def handle_sigterm(signum, frame):
+    """
+    Maneja la señal SIGTERM para cerrar el servidor de forma segura
+    """
+    logging.info("action: shutdown | result: success | message: SIGTERM received, shutting down server...")
+    sys.exit(0)
+
 def main():
     config_params = initialize_config()
     logging_level = config_params["logging_level"]
@@ -49,6 +57,10 @@ def main():
 
     # Initialize server and start server loop
     server = Server(port, listen_backlog)
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    signal.signal(signal.SIGINT, handle_sigterm)
+                  
     server.run()
 
 def initialize_log(logging_level):

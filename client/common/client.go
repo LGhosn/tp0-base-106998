@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/op/go-logging"
 )
@@ -50,8 +53,26 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
+// HandleSignals Handle SIGINT and SIGTERM signals
+func (c *Client) HandleSignals() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigChan
+		log.Infof("action: signal_received | result: success | client_id: %v | signal: %v",
+			c.config.ID,
+			sig,
+		)
+		os.Exit(0)
+	}()
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
+	// Handle SIGINT and SIGTERM
+	c.HandleSignals()
+
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {

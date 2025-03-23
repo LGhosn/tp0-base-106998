@@ -19,12 +19,12 @@ type Bet struct {
 func (b Bet) Encode() []byte {
 	return []byte(fmt.Sprintf(
 		"%s,%s,%s,%s,%s,%s",
+		b.BettingHouse,
 		b.Name,
 		b.Surname,
 		b.Document,
 		b.Birthdate,
 		b.Number,
-		b.BettingHouse,
 	))
 }
 
@@ -33,10 +33,6 @@ type BettingHouse struct {
 }
 
 func BettingHouseConnect(addr string) (*BettingHouse, error) {
-	log.Infof(
-		"action: connect | result: in_progess | server_address: %s",
-		addr,
-	)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err

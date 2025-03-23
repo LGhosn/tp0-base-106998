@@ -33,7 +33,7 @@ for i in $(seq 1 $2); do
     echo "      - NOMBRE=Lionel Andres" >> $1
     echo "      - APELLIDO=Messi" >> $1
     echo "      - DOCUMENTO=106998" >> $1
-    echo "      - NACIMIENTO=1999-03-17" >> $1
+    echo "      - FECHA_NACIMIENTO=1999-03-17" >> $1
     echo "      - NUMERO=7574" >> $1
     echo "    networks:" >> $1
     echo "      - testing_net" >> $1

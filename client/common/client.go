@@ -67,13 +67,9 @@ func (c *Client) StartClientLoop() {
 	// Handle SIGINT and SIGTERM
 	c.HandleSignals()
 
-	log.Infof("action: pre_socket")
-
 	// Create the connection the server.
 	c.createClientSocket()
 	defer c.conn.Close()
-
-	log.Infof("action: connect | result: success | client_id: %v", c.config.ID)
 
 	bet := Bet{
 		Name:         os.Getenv("NOMBRE"),
@@ -83,11 +79,6 @@ func (c *Client) StartClientLoop() {
 		Number:       os.Getenv("NUMERO"),
 		BettingHouse: c.config.ID,
 	}
-	log.Infof(
-		"action: apuesta_generada | result: success | dni: %v | numero: %v",
-		bet.Document,
-		bet.Number,
-	)
 
 	err := c.conn.PlaceBet(bet)
 	if err != nil {

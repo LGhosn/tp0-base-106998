@@ -48,11 +48,10 @@ class BetCenter:
         return bytes(data)
     
     def recv(self) -> Bet:
-        logging.debug("Waiting 4 bytes")
         size = int.from_bytes(self.recv_all(4), byteorder="big") 
+
         betBytes = self.recv_all(size)
         bet = Bet(*betBytes.decode().split(','))
-        print(f"bet{bet}")
         return bet
 
     def close(self) -> None:

@@ -2,19 +2,18 @@ package common
 
 import (
 	"bufio"
-	"encodig/binary"
+	"encoding/binary"
 	"fmt"
 	"net"
-	"strings"
 )
 
 type Bet struct {
-	Name			string
-	Surname			string
-	Document		string
-	Birthdate		string
-	Number			string
-	BettingHouse	string
+	Name         string
+	Surname      string
+	Document     string
+	Birthdate    string
+	Number       string
+	BettingHouse string
 }
 
 func (b Bet) Encode() []byte {
@@ -30,10 +29,10 @@ func (b Bet) Encode() []byte {
 }
 
 type BettingHouse struct {
-	conn		net.Conn
-} 
+	conn net.Conn
+}
 
-func BettingHouse(addr string) (*BettingHouse, error) {
+func BettingHouseConnect(addr string) (*BettingHouse, error) {
 	log.Infof(
 		"action: connect | result: in_progess | server_address: %s",
 		addr,
@@ -48,12 +47,12 @@ func BettingHouse(addr string) (*BettingHouse, error) {
 func (b *BettingHouse) PlaceBet(bet Bet) error {
 	writer := bufio.NewWriter(b.conn)
 	betEncoded := bet.Encode()
-	len = uint32(len(betEncoded))
-	err := binary.Write(writer, binary.BigEndian, len)
+	betSize := uint32(len(betEncoded))
+	err := binary.Write(writer, binary.BigEndian, betSize)
 	if err != nil {
 		return fmt.Errorf("error writing bet length: %v", err)
 	}
-	_, err := writer.Write(betEncoded)
+	_, err = writer.Write(betEncoded)
 	if err != nil {
 		return fmt.Errorf("error writing bet: %v", err)
 	}

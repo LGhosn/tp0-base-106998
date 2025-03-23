@@ -35,7 +35,7 @@ func NewClient(config ClientConfig) *Client {
 // failure, error is printed in stdout/stderr and exit 1
 // is returned
 func (c *Client) createClientSocket() error {
-	conn, err := BettingHouse(c.config.ServerAddress. c.config.ID)
+	conn, err := BettingHouseConnect(c.config.ServerAddress)
 	if err != nil {
 		log.Criticalf(
 			"action: connect | result: fail | client_id: %v | error: %v",
@@ -67,7 +67,6 @@ func (c *Client) StartClientLoop() {
 	// Handle SIGINT and SIGTERM
 	c.HandleSignals()
 
-	
 	log.Infof("action: pre_socket")
 
 	// Create the connection the server.
@@ -77,12 +76,12 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: connect | result: success | client_id: %v", c.config.ID)
 
 	bet := Bet{
-		Name: 			os.Getenv("NOMBRE"),
-		Surname: 		os.Getenv("APELLIDO"),
-		Document: 		os.Getenv("DOCUMENTO"),
-		Birthdate: 		os.Getenv("FECHA_NACIMIENTO"),
-		Number: 		os.Getenv("NUMERO"),
-		BettingHouse:	c.config.ID,
+		Name:         os.Getenv("NOMBRE"),
+		Surname:      os.Getenv("APELLIDO"),
+		Document:     os.Getenv("DOCUMENTO"),
+		Birthdate:    os.Getenv("FECHA_NACIMIENTO"),
+		Number:       os.Getenv("NUMERO"),
+		BettingHouse: c.config.ID,
 	}
 	log.Infof(
 		"action: apuesta_generada | result: success | dni: %v | numero: %v",
@@ -96,7 +95,7 @@ func (c *Client) StartClientLoop() {
 	} else {
 		log.Infof(
 			"action: apuesta_enviada | result: success | dni: %v | numero: %v",
-			bet.Id,
+			bet.Document,
 			bet.Number,
 		)
 	}

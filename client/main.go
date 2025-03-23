@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/op/go-logging"
-	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/common"
@@ -34,8 +32,6 @@ func InitConfig() (*viper.Viper, error) {
 	// Add env variables supported
 	v.BindEnv("id")
 	v.BindEnv("server", "address")
-	v.BindEnv("loop", "period")
-	v.BindEnv("loop", "amount")
 	v.BindEnv("log", "level")
 
 	// Try to read configuration from config file. If config file
@@ -45,12 +41,6 @@ func InitConfig() (*viper.Viper, error) {
 	v.SetConfigFile("./config.yaml")
 	if err := v.ReadInConfig(); err != nil {
 		fmt.Printf("Configuration could not be read from config file. Using env variables instead")
-	}
-
-	// Parse time.Duration variables and return an error if those variables cannot be parsed
-
-	if _, err := time.ParseDuration(v.GetString("loop.period")); err != nil {
-		return nil, errors.Wrapf(err, "Could not parse CLI_LOOP_PERIOD env var as time.Duration.")
 	}
 
 	return v, nil
@@ -102,11 +92,9 @@ func main() {
 	PrintConfig(v)
 
 	clientConfig := common.ClientConfig{
+		ServerAddress: v.GetString("server.address"),
 		ID:            v.GetString("id"),
-		ServerAddress: v.GetString("server.address")
 	}
-	// imprimo el valor de clientConfig
-	fmt.Println(clientConfig)
 
 	client := common.NewClient(clientConfig)
 	client.StartClientLoop()

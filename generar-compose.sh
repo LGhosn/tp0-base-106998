@@ -30,6 +30,11 @@ for i in $(seq 1 $2); do
     echo "    entrypoint: /client" >> $1
     echo "    environment:" >> $1
     echo "      - CLI_ID=$i" >> $1
+    echo "      - NOMBRE=Lionel Andres" >> $1
+    echo "      - APELLIDO=Messi" >> $1
+    echo "      - DOCUMENTO=106998" >> $1
+    echo "      - NACIMIENTO=1999-03-17" >> $1
+    echo "      - NUMERO=7574" >> $1
     echo "    networks:" >> $1
     echo "      - testing_net" >> $1
     echo "    depends_on:" >> $1

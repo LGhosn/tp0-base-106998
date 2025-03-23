@@ -1,19 +1,17 @@
 import socket
 import logging
 import signal
+from common.bet_center import BetCenterListener, BetCenter
+from common.utils import store_bets
 
 class Server:
     def __init__(self, port, listen_backlog):
         # Initialize server socket
-        self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._server_socket.settimeout(2)
+        self._server_socket = BetCenterListener.bind('', port, listen_backlog)
         self._server_running = True
         
         signal.signal(signal.SIGTERM, self.__server_handle_sigterm)
         signal.signal(signal.SIGINT, self.__server_handle_sigterm)
-
-        self._server_socket.bind(('', port))
-        self._server_socket.listen(listen_backlog)
 
     def run(self):
         """
@@ -27,10 +25,10 @@ class Server:
         while self._server_running:
             client_sock = self.__accept_new_connection()
             if client_sock:
-                with client_sock:
+                try:
                     self.__handle_client_connection(client_sock)
-
-        self._server_socket.close()
+                finally:
+                    client_sock.close()
 
     def __server_handle_sigterm(self, _signal, _frame):
         """
@@ -39,7 +37,7 @@ class Server:
         logging.info("action: shutdown | result: success | message: SIGTERM received, shutting down server...")
         self._server_running = False
     
-    def __handle_client_connection(self, client_sock):
+    def __handle_client_connection(self, client_sock: BetCenter):
         """
         Read message from a specific client socket and closes the socket
 
@@ -47,16 +45,13 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            bet = client_sock.recv()
+            store_bets([bet])
+            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
 
-    def __accept_new_connection(self):
+    def __accept_new_connection(self) -> BetCenter:
         """
         Accept new connections
 

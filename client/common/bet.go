@@ -44,6 +44,13 @@ func BettingHouseConnect(addr string) (*BettingHouse, error) {
 func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 	writer := bufio.NewWriter(b.conn)
 
+	nbatches := (len(bets) + int(MaxAmountOfBets) - 1) / int(MaxAmountOfBets)
+	log.Infof("Sending %d batches of bets", nbatches)
+	err := binary.Write(writer, binary.BigEndian, uint32(nbatches))
+	if err != nil {
+		return fmt.Errorf("error writing bet length: %v", err)
+	}
+
 	// envio las apuestas agrupadas en paquetes de a MaxAmountOfBets
 	for i := 0; i < len(bets); i += int(MaxAmountOfBets) {
 		end := i + int(MaxAmountOfBets)
@@ -52,25 +59,22 @@ func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 		}
 		betsToSend := bets[i:end]
 
-		// escribo la cantidad de apuestas a enviar
-		err := binary.Write(writer, binary.BigEndian, uint8(len(betsToSend)))
-		if err != nil {
-			return fmt.Errorf("error writing bet length: %v", err)
-		}
-
 		betsEncoded := make([][]byte, len(betsToSend))
 		for i, bet := range betsToSend {
 			betsEncoded[i] = bet.Encode()
 		}
 
 		batchBytes := bytes.Join(betsEncoded, []byte("\n"))
-		_, err = writer.Write(batchBytes)
-		if err != nil {
-			return fmt.Errorf("error writing bet: %v", err)
-		}
+
+		batchLen := len(batchBytes)
+		batchLenBytes := make([]byte, 4)
+		binary.BigEndian.PutUint32(batchLenBytes, uint32(batchLen))
+
+		writer.Write(batchLenBytes)
+		writer.Write(batchBytes)
 	}
 
-	err := writer.Flush()
+	err = writer.Flush()
 	if err != nil {
 		return fmt.Errorf("error flushing bet: %v", err)
 	}

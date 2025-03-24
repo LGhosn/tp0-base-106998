@@ -48,13 +48,13 @@ class BetCenter:
         return bytes(data)
     
     def recv(self) -> list[Bet]:
-        all_batch_size = int.from_bytes(self.recv_all(4), byteorder="big") 
+        num_batches = int.from_bytes(self.recv_all(4), byteorder="big") 
         bets = []
 
-        for _ in range(all_batch_size):
+        for _ in range(num_batches):
             batch_size = int.from_bytes(self.recv_all(4), byteorder="big")
             actual_batch = self.recv_all(batch_size)
-            for bet in actual_batch.split(b'\0'):
+            for bet in actual_batch.split(b'\n'):
                 if bet:
                     bets.append(Bet(*bet.decode().split(',')))
 

@@ -47,9 +47,9 @@ class Server:
         try:
             bets = client_sock.recv()
             store_bets(bets)
-            logging.info(f"action: apuesta_almacenada | result: success | cantidad: {len(bets)}")
+            logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error("action: apuesta_recibida | result: fail | error: {e}")
 
     def __accept_new_connection(self) -> BetCenter:
         """

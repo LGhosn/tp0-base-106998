@@ -40,6 +40,7 @@ for i in $(seq 1 $2); do
     echo "    depends_on:" >> $1
     echo "      - server" >> $1
     echo "    volumes:" >> $1
+    echo "      - ./.data/agency-$i.csv:/bets.csv" >> $1
     echo -e "      - ./client/config.yaml:/config.yaml\n" >> $1
 done
 

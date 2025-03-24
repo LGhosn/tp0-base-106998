@@ -75,22 +75,6 @@ func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 		return fmt.Errorf("error flushing bet: %v", err)
 	}
 	return nil
-
-	// betEncoded := bet.Encode()
-	// betSize := uint32(len(betEncoded))
-	// err := binary.Write(writer, binary.BigEndian, betSize)
-	// if err != nil {
-	// 	return fmt.Errorf("error writing bet length: %v", err)
-	// }
-	// _, err = writer.Write(betEncoded)
-	// if err != nil {
-	// 	return fmt.Errorf("error writing bet: %v", err)
-	// }
-	// err = writer.Flush()
-	// if err != nil {
-	// 	return fmt.Errorf("error flushing bet: %v", err)
-	// }
-	// return nil
 }
 
 func (b *BettingHouse) Close() {

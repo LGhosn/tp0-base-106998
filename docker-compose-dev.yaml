@@ -27,6 +27,7 @@ services:
     depends_on:
       - server
     volumes:
+      - ./.data/agency-1.csv:/bets.csv
       - ./client/config.yaml:/config.yaml
 
 networks:

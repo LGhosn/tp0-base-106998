@@ -47,12 +47,19 @@ class BetCenter:
 
         return bytes(data)
     
-    def recv(self) -> Bet:
-        size = int.from_bytes(self.recv_all(4), byteorder="big") 
+    def recv(self) -> list[Bet]:
+        all_batch_size = int.from_bytes(self.recv_all(4), byteorder="big") 
+        bets = []
 
-        betBytes = self.recv_all(size)
-        bet = Bet(*betBytes.decode().split(','))
-        return bet
+        for _ in range(all_batch_size):
+            batch_size = int.from_bytes(self.recv_all(4), byteorder="big")
+            actual_batch = self.recv_all(batch_size)
+            for bet in actual_batch.split(b'\0'):
+                if bet:
+                    bets.append(Bet(*bet.decode().split(',')))
+
+        return bets
+
 
     def close(self) -> None:
         self._socket.close()

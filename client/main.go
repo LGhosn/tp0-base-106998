@@ -92,8 +92,9 @@ func main() {
 	PrintConfig(v)
 
 	clientConfig := common.ClientConfig{
-		ServerAddress: v.GetString("server.address"),
-		ID:            v.GetString("id"),
+		ServerAddress:   v.GetString("server.address"),
+		ID:              v.GetString("id"),
+		MaxAmountOfBets: v.GetString("batch.maxAmount"),
 	}
 
 	client := common.NewClient(clientConfig)

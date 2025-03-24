@@ -1,19 +1,24 @@
 package common
 
 import (
+	"encoding/csv"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/op/go-logging"
 )
 
+const BETS_FILE = "/bets.csv"
+
 var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
-	ID            string
-	ServerAddress string
+	ID              string
+	ServerAddress   string
+	MaxAmountOfBets string
 }
 
 // Client Entity that encapsulates how
@@ -67,28 +72,47 @@ func (c *Client) StartClientLoop() {
 	// Handle SIGINT and SIGTERM
 	c.HandleSignals()
 
+	betFile, err := os.Open(BETS_FILE)
+	if err != nil {
+		log.Criticalf("action: open_file | result: fail | error: %v", err)
+	}
+	defer betFile.Close()
+
 	// Create the connection the server.
 	c.createClientSocket()
 	defer c.conn.Close()
 
-	bet := Bet{
-		Name:         os.Getenv("NOMBRE"),
-		Surname:      os.Getenv("APELLIDO"),
-		Document:     os.Getenv("DOCUMENTO"),
-		Birthdate:    os.Getenv("FECHA_NACIMIENTO"),
-		Number:       os.Getenv("NUMERO"),
-		BettingHouse: c.config.ID,
+	betReader := csv.NewReader(betFile)
+	bets := make([]Bet, 0)
+
+	// Read the file and send the bets
+	for {
+		readed, err := betReader.Read()
+		if err != nil {
+			break
+		}
+
+		bets = append(bets, Bet{
+			BettingHouse: c.config.ID,
+			Name:         readed[0],
+			Surname:      readed[1],
+			Document:     readed[2],
+			Birthdate:    readed[3],
+			Number:       readed[4],
+		})
+
 	}
 
-	err := c.conn.PlaceBet(bet)
+	maxBets, parseErr := strconv.ParseUint(c.config.MaxAmountOfBets, 10, 8)
+	if parseErr != nil {
+		log.Criticalf("action: parse_max_bets | result: fail | error: %v", parseErr)
+		return
+	}
+	err = c.conn.PlaceBets(bets, uint8(maxBets))
 	if err != nil {
-		log.Errorf("action: apuesta_enviada | result: fail | error: %v", err)
+		log.Errorf("action: apuestas_enviadas | result: fail | client_id: %v | error: %v", err, c.config.ID)
 	} else {
-		log.Infof(
-			"action: apuesta_enviada | result: success | dni: %v | numero: %v",
-			bet.Document,
-			bet.Number,
-		)
+		log.Infof("action: apuestas_enviadas | result: success | client_id: %v", c.config.ID)
 	}
 
 }

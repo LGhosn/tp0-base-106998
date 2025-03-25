@@ -42,9 +42,9 @@ class BetCenter:
         data = bytearray()
 
         while len(data) < size:
-            packet = self._socket.recv(size - len(data))
+            packet = self._socket.recv(size - len(data), socket.MSG_WAITALL)
             if not packet:
-                break
+                raise ConnectionError("Socket closed unexpectedly")
             data.extend(packet)
 
         return bytes(data)

@@ -41,15 +41,22 @@ type BettingHouse struct {
 
 func (b *BettingHouse) AllBetsSent() error {
 	writer := bufio.NewWriter(b.conn)
-	err := binary.Write(writer, binary.BigEndian, uint8(END_FLAG))
-	log.Infof("All bets sent flag %d agency %d", uint8(END_FLAG), b.agencyId)
-	if err != nil {
-		return fmt.Errorf("error writing bet length: %v", err)
+
+	flagByte := make([]byte, 1)
+	flagByte[0] = uint8(END_FLAG)
+
+	log.Infof("All bets sent flag %d agency %d", END_FLAG, b.agencyId)
+	n, err := writer.Write(flagByte)
+
+	if err != nil || n != 1 {
+		return fmt.Errorf("error writing end flag: %v", err)
 	}
+
 	err = writer.Flush()
 	if err != nil {
-		return fmt.Errorf("error flushing bet: %v", err)
+		return fmt.Errorf("error flushing end flag: %v", err)
 	}
+
 	return nil
 }
 
@@ -109,8 +116,12 @@ func BettingHouseConnect(addr string, agencyId string) (*BettingHouse, error) {
 func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 	writer := bufio.NewWriter(b.conn)
 
-	err := binary.Write(writer, binary.BigEndian, uint8(BET_FLAG))
-	if err != nil {
+	flagByte := make([]byte, 1)
+	flagByte[0] = uint8(BET_FLAG)
+
+	log.Infof("Sending bets flag %d agency %d", BET_FLAG, b.agencyId)
+	n, err := writer.Write(flagByte)
+	if err != nil || n != 1 {
 		return fmt.Errorf("error writing bet length: %v", err)
 	}
 
@@ -136,6 +147,9 @@ func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 		batchBytes := bytes.Join(betsEncoded, []byte("\n"))
 
 		batchLen := len(batchBytes)
+		if batchLen == 0 {
+			continue
+		}
 		batchLenBytes := make([]byte, 4)
 		binary.BigEndian.PutUint32(batchLenBytes, uint32(batchLen))
 

@@ -59,14 +59,12 @@ class Server:
         """
         try:
             flag = client_sock.recv()
-            if flag == END_FLAG:
-                logging.info(f"action: fin_apuestas | result: success")
-            elif flag == BET_FLAG:
+            if flag == BET_FLAG:
                 data = client_sock.recv_bets()
                 logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(data)}")
                 store_bets(data)
             else:
-                logging.error(f"action: apuesta_recibida | result: fail | error: invalid flag {flag}")
+                logging.info(f"action: fin_apuestas | result: success")
         except OSError as e:
             logging.error("action: apuesta_recibida | result: fail | error: {e}")
 

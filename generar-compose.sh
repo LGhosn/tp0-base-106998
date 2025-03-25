@@ -16,6 +16,7 @@ echo "    image: server:latest" >> $1
 echo "    entrypoint: python3 /main.py" >> $1
 echo "    environment:" >> $1
 echo "      - PYTHONUNBUFFERED=1" >> $1
+echo "      - CANT_CLIENTES=$2" >> $1
 echo "    networks:" >> $1
 echo "      - testing_net" >> $1
 echo "    volumes:" >> $1

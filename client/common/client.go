@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/op/go-logging"
 )
@@ -40,7 +41,7 @@ func NewClient(config ClientConfig) *Client {
 // failure, error is printed in stdout/stderr and exit 1
 // is returned
 func (c *Client) createClientSocket() error {
-	conn, err := BettingHouseConnect(c.config.ServerAddress)
+	conn, err := BettingHouseConnect(c.config.ServerAddress, c.config.ID)
 	if err != nil {
 		log.Criticalf(
 			"action: connect | result: fail | client_id: %v | error: %v",
@@ -113,6 +114,24 @@ func (c *Client) StartClientLoop() {
 		log.Errorf("action: apuestas_enviadas | result: fail | client_id: %v | error: %v", err, c.config.ID)
 	} else {
 		log.Infof("action: apuestas_enviadas | result: success | client_id: %v", c.config.ID)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	err = c.conn.AllBetsSent()
+	if err != nil {
+		log.Errorf("action: todas_las_apuestas_enviadas | result: fail | client_id: %v | error: %v", err, c.config.ID)
+	} else {
+		log.Infof("action: todas_las_apuestas_enviadas | result: success | client_id: %v", c.config.ID)
+	}
+
+	time.Sleep(5 * time.Second)
+
+	winners, err := c.conn.GetWinners()
+	if err != nil {
+		log.Errorf("action: consulta_ganadores  | result: fail | client_id: %v | error: %v", err, c.config.ID)
+	} else {
+		log.Infof("action: consulta_ganadores  | result: success | client_id: %v | cant_ganadores: %v", c.config.ID, len(winners))
 	}
 
 }

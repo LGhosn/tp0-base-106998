@@ -2,11 +2,12 @@ import socket
 import logging
 import signal
 from common.bet_center import BetCenterListener, BetCenter
-from common.utils import store_bets
+from common.utils import BET_FLAG, END_FLAG, has_won, load_bets, store_bets
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, cant_clientes):
         # Initialize server socket
+        self.cant_clientes = cant_clientes
         self._server_socket = BetCenterListener.bind('', port, listen_backlog)
         self._server_running = True
         
@@ -14,21 +15,33 @@ class Server:
         signal.signal(signal.SIGINT, self.__server_handle_sigterm)
 
     def run(self):
-        """
-        Dummy Server loop
-
-        Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
-        """
-
-        while self._server_running:
+        agencies = {}
+        while self._server_running and len(agencies) < self.cant_clientes:
             client_sock = self.__accept_new_connection()
             if client_sock:
-                try:
                     self.__handle_client_connection(client_sock)
-                finally:
-                    client_sock.close()
+                    agencies[client_sock.agency] = client_sock
+
+        # Close server socket
+        self._server_socket.close()
+
+        if self._server_running:
+            logging.info("action: sorteo | result: success")
+
+            winners = {}
+            for bet in load_bets():
+                if has_won(bet):
+                    if bet.agency not in winners:
+                        winners[bet.agency] = []
+                    winners[bet.agency].append(int(bet.document))
+            
+            #envio los ganadores correspondientes a cada agencia
+            for agency, socket in agencies.items():
+                socket.send_winners(winners.get(agency, []))
+
+        for socket in agencies.values():
+            socket.close()
+
 
     def __server_handle_sigterm(self, _signal, _frame):
         """
@@ -45,9 +58,15 @@ class Server:
         client socket will also be closed
         """
         try:
-            bets = client_sock.recv()
-            store_bets(bets)
-            logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+            flag = client_sock.recv()
+            if flag == END_FLAG:
+                logging.info(f"action: fin_apuestas | result: success")
+            elif flag == BET_FLAG:
+                data = client_sock.recv_bets()
+                logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(data)}")
+                store_bets(data)
+            else:
+                logging.error(f"action: apuesta_recibida | result: fail | error: invalid flag")
         except OSError as e:
             logging.error("action: apuesta_recibida | result: fail | error: {e}")
 

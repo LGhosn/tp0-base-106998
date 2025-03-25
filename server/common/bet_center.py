@@ -1,5 +1,5 @@
 import socket
-from common.utils import Bet
+from common.utils import BET_FLAG, END_FLAG, Bet
 import logging
 
 class BetCenterListener:
@@ -16,15 +16,17 @@ class BetCenterListener:
     
     def accept(self) -> tuple[Bet, tuple[str, int]]:
         client_socket, addr = self._socket.accept()
-        return BetCenter(client_socket), addr
+        agency = int.from_bytes(client_socket.recv(4), byteorder="big")
+        return BetCenter(client_socket, agency), addr
 
     
     def close(self) -> None:
         self._socket.close()
 
 class BetCenter:
-    def __init__(self, socket: socket.socket):
+    def __init__(self, socket: socket.socket, agency: int):
         self._socket = socket
+        self.agency = agency
 
     def __enter__(self) -> 'BetCenter':
         return self
@@ -47,7 +49,7 @@ class BetCenter:
 
         return bytes(data)
     
-    def recv(self) -> list[Bet]:
+    def recv_bets(self) -> list[Bet]:
         num_batches = int.from_bytes(self.recv_all(4), byteorder="big") 
         bets = []
 
@@ -60,6 +62,21 @@ class BetCenter:
 
         return bets
 
+    def recv(self) -> list[Bet]:
+        flag = int.from_bytes(self.recv_all(1), byteorder="big")
+        return flag
+
+    def _sendall(self, data: bytes) -> None:
+        sent = 0
+        while sent < len(data):
+            sent += self._socket.send(data[sent:])
+
+    def send_winners(self, winners: list[str]) -> None:
+        # primero envio la cantidad de ganadores
+        self._sendall(len(winners).to_bytes(4, byteorder="big"))
+        for winner in winners:
+            winner_bytes = winner.to_bytes(4, byteorder="big")
+            self._sendall(winner_bytes)
 
     def close(self) -> None:
         self._socket.close()

@@ -5,8 +5,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
+	"strconv"
 )
+
+const BET_FLAG = 1
+const END_FLAG = 2
 
 type Bet struct {
 	Name         string
@@ -30,23 +35,86 @@ func (b Bet) Encode() []byte {
 }
 
 type BettingHouse struct {
-	conn net.Conn
+	conn     net.Conn
+	agencyId uint8
 }
 
-func BettingHouseConnect(addr string) (*BettingHouse, error) {
+func (b *BettingHouse) AllBetsSent() error {
+	writer := bufio.NewWriter(b.conn)
+	err := binary.Write(writer, binary.BigEndian, []byte{END_FLAG})
+	if err != nil {
+		return fmt.Errorf("error writing bet length: %v", err)
+	}
+	err = writer.Flush()
+	if err != nil {
+		return fmt.Errorf("error flushing bet: %v", err)
+	}
+	return nil
+}
+
+func (b *BettingHouse) GetWinners() ([]string, error) {
+	// Leer el número de DNIs
+	amountOfWinners := make([]byte, 4)
+	if _, err := io.ReadFull(b.conn, amountOfWinners); err != nil {
+		return nil, fmt.Errorf("couldn't recv winner quantity: %v", err)
+	}
+
+	amount := binary.BigEndian.Uint32(amountOfWinners)
+
+	// No hay ganadores, devuelvo lista vacía
+	if amount == 0 {
+		return nil, nil
+	}
+
+	// Leeo los DNIs
+	winners := make([]byte, 4*amount)
+	if _, err := io.ReadFull(b.conn, winners); err != nil {
+		return nil, fmt.Errorf("couldn't recv winners: %v", err)
+	}
+
+	// armo la lista de ganadores en formato string
+	winnersStr := make([]string, amount)
+	for i := 0; i < int(amount); i++ {
+		winner := binary.BigEndian.Uint32(winners[i*4 : (i+1)*4])
+		winnersStr[i] = fmt.Sprintf("%d", winner)
+	}
+
+	return winnersStr, nil
+}
+
+func BettingHouseConnect(addr string, agencyId string) (*BettingHouse, error) {
+	id, err := strconv.ParseUint(agencyId, 10, 8)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing agency id: %v", err)
+	}
+
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
-	return &BettingHouse{conn: conn}, nil
+
+	writer := bufio.NewWriter(conn)
+	err = binary.Write(writer, binary.BigEndian, uint8(id))
+	if err != nil {
+		return nil, fmt.Errorf("error writing agency id: %v", err)
+	}
+	err = writer.Flush()
+	if err != nil {
+		return nil, fmt.Errorf("error flushing agency id: %v", err)
+	}
+	return &BettingHouse{conn: conn, agencyId: uint8(id)}, nil
 }
 
 func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 	writer := bufio.NewWriter(b.conn)
 
+	err := binary.Write(writer, binary.BigEndian, []byte{BET_FLAG})
+	if err != nil {
+		return fmt.Errorf("error writing bet length: %v", err)
+	}
+
 	nbatches := (len(bets) + int(MaxAmountOfBets) - 1) / int(MaxAmountOfBets)
-	log.Infof("Sending %d batches of bets", nbatches)
-	err := binary.Write(writer, binary.BigEndian, uint32(nbatches))
+	err = binary.Write(writer, binary.BigEndian, uint32(nbatches))
 	if err != nil {
 		return fmt.Errorf("error writing bet length: %v", err)
 	}
@@ -82,5 +150,7 @@ func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 }
 
 func (b *BettingHouse) Close() {
-	b.conn.Close()
+	if b.conn != nil {
+		b.conn.Close()
+	}
 }

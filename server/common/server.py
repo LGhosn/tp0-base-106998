@@ -66,7 +66,7 @@ class Server:
                 logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(data)}")
                 store_bets(data)
             else:
-                logging.error(f"action: apuesta_recibida | result: fail | error: invalid flag")
+                logging.error(f"action: apuesta_recibida | result: fail | error: invalid flag {flag}")
         except OSError as e:
             logging.error("action: apuesta_recibida | result: fail | error: {e}")
 

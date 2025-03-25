@@ -41,7 +41,8 @@ type BettingHouse struct {
 
 func (b *BettingHouse) AllBetsSent() error {
 	writer := bufio.NewWriter(b.conn)
-	err := binary.Write(writer, binary.BigEndian, []byte{END_FLAG})
+	err := binary.Write(writer, binary.BigEndian, uint8(END_FLAG))
+	log.Infof("All bets sent flag %d agency %d", uint8(END_FLAG), b.agencyId)
 	if err != nil {
 		return fmt.Errorf("error writing bet length: %v", err)
 	}
@@ -108,7 +109,7 @@ func BettingHouseConnect(addr string, agencyId string) (*BettingHouse, error) {
 func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 	writer := bufio.NewWriter(b.conn)
 
-	err := binary.Write(writer, binary.BigEndian, []byte{BET_FLAG})
+	err := binary.Write(writer, binary.BigEndian, uint8(BET_FLAG))
 	if err != nil {
 		return fmt.Errorf("error writing bet length: %v", err)
 	}

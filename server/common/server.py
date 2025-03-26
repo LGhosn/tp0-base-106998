@@ -4,7 +4,7 @@ import signal
 import multiprocessing
 from time import sleep
 from common.bet_center import BetCenterListener, BetCenter
-from common.utils import BET_FLAG, END_FLAG, has_won, load_bets, store_bets
+from common.utils import BET_FLAG, has_won, load_bets, store_bets
 
 class Server:
     def __init__(self, port, listen_backlog, cant_clientes):
@@ -28,13 +28,10 @@ class Server:
                 client_process.start()
                 self.agencies[client_sock.agency] = (client_process, client_sock)
 
-        self._server_socket.close()
-        logging.info(f"esperando a que terminen {self.end_flags.n_waiting}")
-        
         for p, _ in self.agencies.values():
             p.join()
 
-        logging.info("Todos terminaron")
+        self._server_socket.close()
         
         self.__process_results()
 
@@ -76,12 +73,10 @@ class Server:
                 store_bets(data)
             else:
                 logging.info(f"action: fin_apuestas | result: success")
-            
-            try:
                 end_flags.wait(timeout=30)
-                logging.info("cliente sincronizado")
-            except multiprocessing.BrokenBarrierError:
-                logging.error("Barrera rota")
+            
+        except multiprocessing.BrokenBarrierError:
+            logging.error("Barrera rota")
         except OSError as e:
             logging.error(f"action: apuesta_recibida | result: fail | error: {e}")
         finally:

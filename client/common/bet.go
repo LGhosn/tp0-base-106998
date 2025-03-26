@@ -45,7 +45,6 @@ func (b *BettingHouse) AllBetsSent() error {
 	flagByte := make([]byte, 1)
 	flagByte[0] = uint8(END_FLAG)
 
-	log.Infof("All bets sent flag %d agency %d", END_FLAG, b.agencyId)
 	n, err := writer.Write(flagByte)
 
 	if err != nil || n != 1 {
@@ -119,7 +118,6 @@ func (b *BettingHouse) PlaceBets(bets []Bet, MaxAmountOfBets uint8) error {
 	flagByte := make([]byte, 1)
 	flagByte[0] = uint8(BET_FLAG)
 
-	log.Infof("Sending bets flag %d agency %d", BET_FLAG, b.agencyId)
 	n, err := writer.Write(flagByte)
 	if err != nil || n != 1 {
 		return fmt.Errorf("error writing bet length: %v", err)

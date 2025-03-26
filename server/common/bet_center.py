@@ -16,7 +16,7 @@ class BetCenterListener:
     
     def accept(self) -> tuple[Bet, tuple[str, int]]:
         client_socket, addr = self._socket.accept()
-        agency = int.from_bytes(client_socket.recv(4), byteorder="big")
+        agency = int.from_bytes(client_socket.recv(1), byteorder="big")
         return BetCenter(client_socket, agency), addr
 
     

@@ -63,10 +63,12 @@ class Server:
                 data = client_sock.recv_bets()
                 logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(data)}")
                 store_bets(data)
+            elif flag == END_FLAG:
+                    logging.info(f"action: fin_apuestas | result: success")
             else:
-                logging.info(f"action: fin_apuestas | result: success")
+                raise OSError(f"flag desconocido {flag} from {client_sock.agency}")
         except OSError as e:
-            logging.error("action: apuesta_recibida | result: fail | error: {e}")
+            logging.error(f"action: apuesta_recibida | result: fail | error: {e}")
 
     def __accept_new_connection(self) -> BetCenter:
         """
